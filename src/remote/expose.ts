@@ -1,4 +1,5 @@
 import {
+    AI_VISION_HOST_SIGNAL,
     AI_VISION_SCHEMA_VERSION,
     buildHelp,
     errMessage,
@@ -8,6 +9,7 @@ import {
     shapeResult,
 } from "../core/index.js";
 import type {
+    IAiHostSignal,
     IAiElementDeclaration,
     IAiMember,
     IAiMemberShape,
@@ -21,13 +23,20 @@ import type {
 export interface IExposeOptions {
     readonly publish?: boolean;
     readonly onWarning?: (message: string) => void;
+    /** Where change and notify signals go. Defaults to calling `window[hostSignalName]` with the
+     *  JSON-encoded signal when such a function exists, and doing nothing when it does not. */
+    readonly onHostSignal?: (signal: IAiHostSignal) => void;
+    /** Name of the global the default transport calls. Defaults to AI_VISION_HOST_SIGNAL. */
+    readonly hostSignalName?: string;
 }
 
 export interface IAiVisionRemote {
     readonly schemaVersion: number;
+    readonly version: number;
     describe(): IAiVisionShape;
     handle(request: IAiRemoteRequest): Promise<IAiRemoteResponse>;
     refresh(): void;
+    notify(text: string): void;
     dispose(): void;
 }
 
@@ -41,15 +50,27 @@ type ParsedPath = ReturnType<typeof parsePath>;
 
 export function expose(root: object, options: IExposeOptions = {}): IAiVisionRemote {
     const onWarning = options.onWarning ?? ((message: string) => console.warn(message));
+    const hostSignalName = options.hostSignalName ?? AI_VISION_HOST_SIGNAL;
     let shape = describeRoot(root, onWarning);
+    let version = 1;
     let disposed = false;
 
     const remote: IAiVisionRemote = {
         schemaVersion: AI_VISION_SCHEMA_VERSION,
+        get version() {
+            return version;
+        },
         describe: () => shape,
         handle: request => handleRequest(root, request),
         refresh: () => {
-            if (!disposed) shape = describeRoot(root, onWarning);
+            if (!disposed) {
+                shape = describeRoot(root, onWarning);
+                version++;
+                emitSignal({ type: "shape", version, schemaVersion: AI_VISION_SCHEMA_VERSION });
+            }
+        },
+        notify: text => {
+            if (!disposed) emitSignal({ type: "notify", text: String(text) });
         },
         dispose: () => {
             disposed = true;
@@ -63,6 +84,26 @@ export function expose(root: object, options: IExposeOptions = {}): IAiVisionRem
         window.__aiVision = remote;
     }
     return remote;
+
+    function emitSignal(signal: IAiHostSignal): void {
+        try {
+            if (options.onHostSignal) {
+                options.onHostSignal(signal);
+                return;
+            }
+            if (typeof window === "undefined") return;
+            const transport = (window as unknown as Record<string, unknown>)[hostSignalName];
+            if (typeof transport === "function") {
+                (transport as (payload: string) => void).call(window, JSON.stringify(signal));
+            }
+        } catch (error) {
+            try {
+                onWarning("Could not deliver AiVision host signal: " + errMessage(error));
+            } catch {
+                // Warning handlers must not make signal delivery observable to the caller.
+            }
+        }
+    }
 
     async function handleRequest(modelRoot: object, request: IAiRemoteRequest): Promise<IAiRemoteResponse> {
         if (disposed) return { ok: false, error: "The AiVision remote has been disposed." };

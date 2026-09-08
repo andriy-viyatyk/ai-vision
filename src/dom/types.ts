@@ -11,6 +11,11 @@ export interface IAiHighlightOptions {
     scroll?: boolean;
     /** Reuse an id to replace an existing highlight instead of stacking a second one. */
     id?: string;
+    /** Button labels for the callout card. When given, they REPLACE the default single Close
+     *  button, in order. Pressing one clears the highlight and calls `onButton`. */
+    buttons?: readonly string[];
+    /** Called with the pressed label. Same-realm only: a callback cannot cross a CDP evaluate. */
+    onButton?: (label: string, id: string) => void;
 }
 
 export interface IAiHighlightResult {

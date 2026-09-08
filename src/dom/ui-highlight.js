@@ -20,7 +20,7 @@
 (function () {
     "use strict";
 
-    var VERSION = 1;
+    var VERSION = 2;
     if (window.__aiVisionHighlight && window.__aiVisionHighlight.version === VERSION) {
         return;
     }
@@ -80,7 +80,52 @@
         return ring;
     }
 
-    function makeCard(item, title, text) {
+    function styleButton(button) {
+        setStyle(button, {
+            padding: "3px 12px",
+            font: "inherit",
+            fontWeight: "600",
+            color: "#FFFFFF",
+            background: ACCENT,
+            border: "1px solid " + ACCENT_DARK,
+            borderRadius: "4px",
+            cursor: "pointer",
+        });
+    }
+
+    function buttonSlug(label, index, used) {
+        var base = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        if (!base) base = String(index);
+        var count = used[base] || 0;
+        var slug;
+        do {
+            count++;
+            slug = count === 1 ? base : base + "-" + count;
+        } while (used[slug]);
+        used[base] = count;
+        used[slug] = 1;
+        return slug;
+    }
+
+    function makeButton(item, label, dataName, onButton) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.setAttribute("data-name", dataName);
+        button.setAttribute("aria-label", label);
+        styleButton(button);
+        button.addEventListener("click", function () {
+            clear(item.id);
+            try {
+                if (typeof onButton === "function") onButton(label, item.id);
+            } catch (e) {
+                // A button callback must not leave the overlay in a bad state.
+            }
+        });
+        return button;
+    }
+
+    function makeCard(item, title, text, buttons, onButton) {
         var card = document.createElement("div");
         setStyle(card, {
             position: "fixed",
@@ -110,24 +155,29 @@
             card.appendChild(body);
         }
 
-        var close = document.createElement("button");
-        close.type = "button";
-        close.textContent = "Close";
-        setStyle(close, {
-            marginTop: "8px",
-            padding: "3px 12px",
-            font: "inherit",
-            fontWeight: "600",
-            color: "#FFFFFF",
-            background: ACCENT,
-            border: "1px solid " + ACCENT_DARK,
-            borderRadius: "4px",
-            cursor: "pointer",
-        });
-        close.addEventListener("click", function () {
-            clear(item.id);
-        });
-        card.appendChild(close);
+        if (buttons === undefined) {
+            var close = makeButton(item, "Close", "ai-vision-highlight-close", onButton);
+            close.style.marginTop = "8px";
+            card.appendChild(close);
+        } else {
+            var labels = [];
+            if (Array.isArray(buttons)) {
+                for (var i = 0; i < buttons.length; i++) {
+                    if (typeof buttons[i] === "string" && buttons[i]) labels.push(buttons[i]);
+                }
+            }
+            if (!labels.length) labels.push("Close");
+
+            var row = document.createElement("div");
+            setStyle(row, { display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" });
+            var usedSlugs = Object.create(null);
+            for (var j = 0; j < labels.length; j++) {
+                var label = labels[j];
+                var slug = buttonSlug(label, j, usedSlugs);
+                row.appendChild(makeButton(item, label, "ai-vision-highlight-button-" + slug, onButton));
+            }
+            card.appendChild(row);
+        }
 
         return card;
     }
@@ -344,8 +394,8 @@
             item.rings.push(ring);
         }
 
-        if (opts.text || opts.title) {
-            item.card = makeCard(item, opts.title, opts.text);
+        if (opts.text || opts.title || opts.buttons !== undefined) {
+            item.card = makeCard(item, opts.title, opts.text, opts.buttons, opts.onButton);
             container.appendChild(item.card);
         }
 
@@ -385,4 +435,3 @@
         clear: clear,
     };
 })();
-

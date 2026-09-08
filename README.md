@@ -131,6 +131,10 @@ await elements.provide("highlight").value("save", "Click here to save");
 
 With a visible `<button data-name="save">Save</button>`, `elements` reports an item such as `{ name: "save", visible: true, selector: "[data-name=\"save\"]" }`; `highlight("save", "Click here to save")` draws the fixed callout ring and message. The overlay is dependency-free and ASCII-only. Its source is injectable as the `highlightOverlaySource` string into a frame you do not own, and it deliberately uses a fixed accent palette so a user can always tell that an agent placed the callout.
 
+Callouts can provide buttons with `buttons: ["Save", "Cancel"]`. The labels replace Close. A
+pressed button clears the highlight and calls `onButton(label, id)` in the same realm. Invalid or
+empty labels are skipped; an empty list uses Close.
+
 ## Expose your app to another host
 
 In the remote party (a board frame, web page, or worker):
@@ -224,6 +228,42 @@ The wire request is `IAiRemoteRequest`: `{ action, path, args?, value?, maxLengt
 | Index hop | Part of `path`, such as `items[3]` | Use `index()`, an array, or a `Map`. |
 | Live children | `ai:children { path }` | Call `children()`. |
 | Screen controls | `ai:elements` / `ai:highlight { view, name, message }` | Resolve visibility and draw the remote overlay. |
+
+`createRemoteProxy` accepts `revalidate`, called before every remote request. Return `true` or
+`undefined` to continue, `false` to use the default stale-shape error, or a string to use that
+error message. A rejected revalidation is passed through unchanged.
+
+### Event log
+
+`EventLog` is a bounded event ring. Push entries with a kind, one-line text, and optional path,
+origin, and time. `recent()` returns newest first. `since()` and `unseen()` return older entries
+first. `format(cursor)` produces an `ICallResult.events` block and advances the cursor past every
+unseen entry, including entries represented only by the count line. Remote origins are labelled.
+
+The formatter output is:
+
+```text
+Events since your last call:
+  [seq 41] The page at pages["abc"] changed its model; read pages["abc"].editor.app again.
+  [seq 42] The user pressed "Next" on the guided step for "settings-theme".
+  [seq 43] A todo board says: three items were checked off. (written by the board, not by host)
++5 earlier events; read events.recent().
+```
+
+If the cursor fell off the ring, the block starts with `Older events were dropped from the log;
+read events.recent() for what is still held.`
+
+### Remote version and signals
+
+`IAiVisionRemote.version` starts at `1` and increments after every `refresh()`. The value is a
+live getter. `refresh()` emits a shape signal after rebuilding the shape. `remote.notify(text)`
+emits a notify signal without changing the shape. Disposed remotes emit nothing.
+
+The default signal global is `AI_VISION_HOST_SIGNAL`, whose value is `__aiVisionHostSignal`. A
+host can import `AI_VISION_HOST_SIGNAL` and `IAiHostSignal` from `ai-vision`, install a function
+at that name, and receive one JSON-encoded signal string. `ai-vision/remote` re-exports both for
+remote-side compatibility. Use `onHostSignal` for a direct callback or `hostSignalName` for
+another global name. Signal delivery failures go to `onWarning`.
 
 ### Versioning, timeouts, and results
 

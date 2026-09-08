@@ -18,12 +18,18 @@ export interface IRemoteProxyOptions {
     readonly originNote?: string;
     readonly onWarning?: (message: string) => void;
     readonly onError?: (error: unknown) => void;
+    /** Called before every remote request. Resolve `true` or `undefined` to proceed; `false` to
+     *  fail the request with a default "the remote shape changed" error; a string to fail it with
+     *  that message. Lets a host revalidate a cached shape lazily instead of trusting an event. */
+    readonly revalidate?: () => Promise<boolean | string | undefined>;
 }
 
 type RemoteSender = (request: IAiRemoteRequest) => Promise<IAiRemoteResponse>;
 type RemoteNode = IAiVisible & { readonly __aiVisionPath?: string };
 
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+export const STALE_REMOTE_SHAPE_MESSAGE = "The remote model's shape changed since this reference was built; read its path again to pick up the new one.";
 
 export function createRemoteProxy(
     shape: IAiVisionShape,
@@ -206,11 +212,13 @@ export function createRemoteProxy(
         });
     }
 
-    function sendRequest(request: IAiRemoteRequest): Promise<unknown> {
-        return send(request).then(response => {
-            if (!response.ok) throw new Error(response.error);
-            return response.result;
-        });
+    async function sendRequest(request: IAiRemoteRequest): Promise<unknown> {
+        const validation = await options.revalidate?.();
+        if (validation === false) throw new Error(STALE_REMOTE_SHAPE_MESSAGE);
+        if (typeof validation === "string" && validation) throw new Error(validation);
+        const response = await send(request);
+        if (!response.ok) throw new Error(response.error);
+        return response.result;
     }
 
     function appendMember(path: string, name: string): string {

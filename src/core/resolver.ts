@@ -5,6 +5,7 @@ import { DEFAULT_MAX_LENGTH, shapeResult } from "./result-shaper.js";
 import { getAiVision, IAiVisionDescriptor } from "./types.js";
 import { noArgumentsWarning } from "./argument-validation.js";
 import { errMessage } from "./errors.js";
+import type { IAiEventsBlock } from "./events.js";
 
 /**
  * The AiVision resolver — walks the live object tree from a root along a parsed path and returns
@@ -40,6 +41,8 @@ export interface ICallResult {
     pending?: boolean;
     /** Visible application UI that needs the agent's attention before it can continue. */
     attention?: { text: string };
+    /** What changed since this caller last looked; a sibling of `attention`, not a replacement. */
+    events?: IAiEventsBlock;
     truncated?: boolean;
     totalLength?: number;
     shown?: number;
@@ -281,5 +284,3 @@ async function shapeResolvedResult(value: unknown, maxLength: number): Promise<R
     if (descriptor?.summarize) return shapeResult(await descriptor.summarize(), maxLength);
     return shapeResult(value, maxLength);
 }
-
-
