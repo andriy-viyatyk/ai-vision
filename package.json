@@ -1,6 +1,6 @@
 {
   "name": "ai-vision",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "An agent-facing object model over an application, with path resolution, hints, UI elements, and remote shapes.",
   "keywords": ["ai", "agent", "object-model", "automation", "remote"],
