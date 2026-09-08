@@ -237,6 +237,18 @@ Results go through `shapeResult(value, maxLength)`. `maxLength` defaults to 20,0
 
 See [`examples/demo-page`](examples/demo-page) for the static browser proof. Run `npm run build` first; it imports `dist` directly and also works from `file://`.
 
+## Releasing
+
+Releases are published by GitHub Actions through npm trusted publishing (OIDC), so no token is
+stored anywhere and no one-time password is needed:
+
+```
+npm version patch        # or minor / major: bumps package.json, commits, tags vX.Y.Z
+git push --follow-tags   # the Release workflow builds, publishes with provenance, creates the GitHub release
+```
+
+The workflow refuses a tag that disagrees with `package.json`. See `.github/workflows/release.yml`.
+
 ## License
 
 MIT.

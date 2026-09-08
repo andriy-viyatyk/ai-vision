@@ -1,0 +1,77 @@
+# Publish a release to npm, triggered by pushing a version tag.
+#
+# The whole flow is:
+#
+#     npm version patch          # bumps package.json, commits, tags
+#     git push --follow-tags     # pushes main and the tag — this workflow takes it from here
+#
+# There is no npm token anywhere. Publishing authenticates through OIDC "trusted publishing":
+# npm is configured to trust *this workflow file in this repository*, and mints a short-lived
+# credential for each run. Nothing long-lived exists to leak, and nothing has to be rotated.
+# It also produces a provenance attestation, so the tarball on npm is publicly linked to the
+# commit and the run that built it.
+#
+# Setup, once, on npmjs.com → the ai-vision package → Settings → Trusted Publisher:
+#   Organization or user: andriy-viyatyk    Repository: ai-vision
+#   Workflow filename:    release.yml       Environment: (leave empty)
+#
+# Note that this file is read from the *tagged commit*, not from main — so a change to the
+# release process only takes effect for tags created after it is merged.
+
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: write # create the GitHub release
+    id-token: write # mint the OIDC token npm trusted publishing needs
+
+jobs:
+    release:
+        name: Publish to npm
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v5
+              with:
+                  node-version: 22
+                  registry-url: https://registry.npmjs.org
+
+            # Trusted publishing needs npm 11.5.1 or newer; the version bundled with the runner
+            # image lags. Pinning to latest here keeps this working as the image drifts.
+            - name: Use an npm that can publish via OIDC
+              run: npm install -g npm@latest
+
+            - run: npm ci
+
+            # A tag that disagrees with the manifest would publish a version nobody asked for.
+            # `npm version` makes them agree; this proves it for tags made any other way.
+            - name: The tag must match package.json
+              run: |
+                  tag="${GITHUB_REF_NAME#v}"
+                  pkg="$(node -p 'require("./package.json").version')"
+                  if [ "$tag" != "$pkg" ]; then
+                      echo "::error::tag $GITHUB_REF_NAME says $tag, package.json says $pkg"
+                      exit 1
+                  fi
+                  echo "publishing $pkg"
+
+            - run: npm run build
+
+            # `prepublishOnly` builds again; harmless, and it keeps a manual publish honest too.
+            - name: Publish
+              run: npm publish --provenance --access public
+
+            - name: Create the GitHub release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh release create "$GITHUB_REF_NAME" \
+                      --title "$GITHUB_REF_NAME" \
+                      --generate-notes \
+                      --verify-tag
