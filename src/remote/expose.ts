@@ -69,6 +69,7 @@ export function expose(root: object, options: IExposeOptions = {}): IAiVisionRem
         try {
             if (request.action === "ai:children") {
                 const node = await resolvePath(modelRoot, request.path);
+                assertNotRestricted(node);
                 const descriptor = getAiVision(node);
                 const result = descriptor?.children ? await descriptor.children() : [];
                 return shapedSuccess(result, request.maxLength);
@@ -76,6 +77,7 @@ export function expose(root: object, options: IExposeOptions = {}): IAiVisionRem
 
             if (request.action === "ai:elements" || request.action === "ai:highlight") {
                 const node = await resolvePath(modelRoot, request.path);
+                assertNotRestricted(node);
                 const descriptor = getAiVision(node);
                 const name = request.action === "ai:elements" ? "elements" : "highlight";
                 const provided = descriptor?.provide?.(name);
@@ -96,6 +98,7 @@ export function expose(root: object, options: IExposeOptions = {}): IAiVisionRem
                 const last = segments.at(-1);
                 if (!last || last.type !== "member") throw new Error("A set request must end in a property name.");
                 const parent = await resolvePath(modelRoot, segments.slice(0, -1));
+                assertNotRestricted(parent);
                 const descriptor = getAiVision(parent);
                 const member = descriptor?.members.find(item => item.name === last.name);
                 if (descriptor && !member) throw new Error('"' + last.name + '" is not a declared member of ' + descriptor.kind + ".");
@@ -272,6 +275,8 @@ async function resolvePath(root: unknown, path: string | ParsedPath): Promise<un
             if (!descriptor) throw new Error('"' + formatPath(walked) + '" has no AiVision descriptor.');
             return buildHelp(formatPath(walked), descriptor);
         }
+        const restricted = descriptor?.restricted?.();
+        if (restricted) throw new Error(restricted);
         if (segment.type === "index") {
             current = await indexInto(current, descriptor, segment.key);
             if (current === undefined) {
@@ -305,6 +310,7 @@ async function invokePath(root: object, path: string, args: readonly unknown[]):
     const last = segments.at(-1);
     if (!last || last.type !== "member") return resolvePath(root, segments);
     const parent = await resolvePath(root, segments.slice(0, -1));
+    assertNotRestricted(parent);
     const descriptor = getAiVision(parent);
     const member = descriptor?.members.find(item => item.name === last.name);
     if (descriptor && (!member || member.kind !== "method")) {
@@ -313,6 +319,11 @@ async function invokePath(root: object, path: string, args: readonly unknown[]):
     const value = readMember(parent, descriptor, last.name);
     if (typeof value !== "function") throw new Error('"' + last.name + '" is not callable.');
     return (value as (...args: unknown[]) => unknown).apply(parent, Array.from(args));
+}
+
+function assertNotRestricted(node: unknown): void {
+    const restricted = getAiVision(node)?.restricted?.();
+    if (restricted) throw new Error(restricted);
 }
 
 async function indexInto(

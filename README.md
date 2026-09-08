@@ -2,11 +2,21 @@
 
 This is an agent-facing object model over an application: a way to let an AI agent read and drive your app through named paths. It is explicitly not computer vision or image analysis; neighbouring npm packages with similar names are image SDKs. Your app exposes one `call` tool, and the agent discovers everything else from the object model itself.
 
-## Why
+## Why one `call` instead of many tools
 
-A generic tool-per-action MCP surface makes a small model guess which tool and arguments to use. Here every node describes itself with `kind`, `summary`, `members`, and `$help`. Members are allow-listed, so an unknown name returns the valid list plus “Did you mean …?”, every result carries a hint listing what is under it, and `helpSearch` finds a member by purpose.
+**Discovery is incremental.** The agent does not need to be handed the whole surface before it can start. It calls `call` with no path, reads the overview, and then descends only into the branch the task is about. Each result carries a hint listing what is under the node it landed on, so the next step is always in front of it.
 
-The surface is self-correcting: a wrong path teaches the agent the right one instead of failing without context.
+**A tool per action does not scale.** An application with many screens turns into hundreds of hand-written, hand-maintained MCP tools — and every one of them is spent from the agent's context window on every turn, including the ones this task will never touch. A single self-describing object model replaces them all and costs nothing for the parts the agent is not looking at.
+
+**The name is literal.** *Vision* here means attention: the agent looks at the one part of the application the task is about, the way you look at one part of a screen, instead of reading the documentation for everything in order to do one thing.
+
+This engine was built for [Persephone](https://github.com/andriy-viyatyk/persephone), where `call` replaced the entire MCP tool set. A small model that got lost choosing among the individual tools drives the same application through paths with few mistakes.
+
+### What makes it self-correcting
+
+Every node describes itself with `kind`, `summary`, `members`, and `$help`. Members are allow-listed, so an unknown name returns the valid list plus “Did you mean …?” instead of an opaque failure, and `helpSearch` finds a member by purpose when the agent does not know where to look.
+
+A wrong path teaches the agent the right one.
 
 ## Install
 

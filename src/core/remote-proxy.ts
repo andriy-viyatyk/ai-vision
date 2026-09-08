@@ -66,7 +66,7 @@ export function createRemoteProxy(
             ...(options.restricted ? { restricted: options.restricted } : {}),
             ...(nodeShape.indexable || memberIndexable ? { index: key => buildIndexed(nodeShape, path, key, declaredTimeoutMs) } : {}),
             summarize: () => requestValue(path, declaredTimeoutMs),
-            provide: name => provide(name, path, members),
+            provide: name => provide(name, path, members, nodeShape),
         };
 
         const proxy: RemoteNode = { aiVision: descriptor, __aiVisionPath: path };
@@ -92,9 +92,18 @@ export function createRemoteProxy(
         name: string,
         path: string,
         members: readonly IAiMemberShape[],
+        nodeShape: IAiNodeShape,
     ): { value: unknown } | undefined {
         const member = members.find(item => item.name === name);
-        if (!member) return undefined;
+        if (!member) {
+            if (!nodeShape.hasChildren) return undefined;
+            return {
+                value: sendRequest({
+                    action: "ai:get",
+                    path: appendMember(path, name),
+                }),
+            };
+        }
 
         if (name === "elements") {
             return {
@@ -162,10 +171,6 @@ export function createRemoteProxy(
         };
     }
 
-    function provideValue(member: IAiMemberShape, path: string): unknown {
-        return provide(member.name, path, [member])?.value;
-    }
-
     function buildIndexed(
         nodeShape: IAiNodeShape,
         path: string,
@@ -224,7 +229,7 @@ function sanitizeMembers(
     const seen = new Set<string>();
     const valid: IAiMemberShape[] = [];
     for (const member of members ?? []) {
-        if (!member || !IDENTIFIER.test(member.name) || member.name === "$help") {
+        if (!member || typeof member.name !== "string" || !IDENTIFIER.test(member.name) || member.name === "$help") {
             onWarning(`Ignoring invalid remote member name ${JSON.stringify(member?.name)}.`);
             continue;
         }
@@ -249,7 +254,8 @@ function sanitizeElements(
     const seen = new Set<string>();
     const valid = [];
     for (const element of elements ?? []) {
-        if (!element || !element.name || element.name.includes('"') || element.name.includes("\\")) {
+        if (!element || typeof element.name !== "string" || !element.name
+            || element.name.includes('"') || element.name.includes("\\")) {
             onWarning("Ignoring invalid remote element name " + JSON.stringify(element?.name) + ".");
             continue;
         }

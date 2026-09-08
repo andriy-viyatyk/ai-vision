@@ -113,9 +113,13 @@ async function stepTo(node: unknown, segment: string): Promise<unknown> {
                 current = descriptor?.index ? descriptor.index(step.key) : (current as Record<string, unknown>)?.[String(step.key)];
             } else if (step.type === "member") {
                 if (step.name === "x" && segment.startsWith("[")) continue; // the synthetic prefix
-                current = (current as Record<string, unknown>)?.[step.name];
+                // Match the resolver: descriptor-provided values take precedence over plain properties.
+                const provided = getAiVision(current)?.provide?.(step.name);
+                current = provided ? provided.value : (current as Record<string, unknown>)?.[step.name];
             } else if (step.type === "call") {
-                const fn = (current as Record<string, unknown>)?.[step.name];
+                // Match the resolver here too, so remote proxy methods are provide-backed.
+                const provided = getAiVision(current)?.provide?.(step.name);
+                const fn = provided ? provided.value : (current as Record<string, unknown>)?.[step.name];
                 if (typeof fn !== "function") return undefined;
                 current = (fn as (...a: unknown[]) => unknown).apply(current, step.args);
             } else {
@@ -144,5 +148,4 @@ function dedupe(hits: IHelpSearchHit[]): IHelpSearchHit[] {
         return true;
     });
 }
-
 
