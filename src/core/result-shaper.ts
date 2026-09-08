@@ -144,7 +144,19 @@ function shapeValue(value: unknown, depth: number, seen: WeakSet<object>, maxLen
     if (seen.has(object)) return { kind: "circular" };
     const descriptor = getAiVision(object);
     if (descriptor) {
-        return descriptor.summarize ? descriptor.summarize() : { kind: descriptor.kind };
+        if (!descriptor.summarize) return { kind: descriptor.kind };
+        const summary = descriptor.summarize();
+        // `shapeValue` is synchronous by contract — the shaped tree has to be JSON-serializable
+        // right away. A NESTED node whose `summarize()` is async can only hand back a Promise
+        // here, and a Promise serializes as `{}`, silently blanking the node. Report the node by
+        // kind instead and point at its own path, where `shapeResolvedResult` does await it.
+        if (isPromiseLike(summary)) {
+            return {
+                kind: descriptor.kind,
+                note: "Summary is async; read this node's own path to see it.",
+            };
+        }
+        return summary;
     }
     if (depth >= MAX_DEPTH) return { kind: Array.isArray(object) ? "array" : "object", note: "depth limit" };
     seen.add(object);
@@ -168,6 +180,10 @@ function shapeValue(value: unknown, depth: number, seen: WeakSet<object>, maxLen
     // A class instance with no descriptor: do not dump its internals.
     const name = (object as { constructor?: { name?: string } }).constructor?.name || "object";
     return { kind: name, note: `No AiVision descriptor yet for ${name}; use $help on the parent, or script.execute.` };
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+    return typeof (value as { then?: unknown } | null | undefined)?.then === "function";
 }
 
 function isPlainObject(value: object): boolean {
