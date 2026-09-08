@@ -1,0 +1,38 @@
+{
+  "name": "ai-vision",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "An agent-facing object model over an application, with path resolution, hints, UI elements, and remote shapes.",
+  "keywords": ["ai", "agent", "object-model", "automation", "remote"],
+  "author": "andriy-viyatyk",
+  "license": "MIT",
+  "repository": "github:andriy-viyatyk/ai-vision",
+  "files": ["dist", "README.md", "LICENSE"],
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./dom": {
+      "types": "./dist/dom/index.d.ts",
+      "import": "./dist/dom/index.js"
+    },
+    "./remote": {
+      "types": "./dist/remote/index.d.ts",
+      "import": "./dist/remote/index.js"
+    },
+    "./ui-highlight.js": {
+      "types": "./dist/dom/ui-highlight.d.ts",
+      "import": "./dist/dom/ui-highlight.js"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "node scripts/generate-highlight-source.mjs && tsc -p tsconfig.json && node scripts/copy-assets.mjs",
+    "clean": "node scripts/clean.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,0 +1,69 @@
+:root {
+    color-scheme: light dark;
+    --bg: #f4f6f8;
+    --panel: #ffffff;
+    --panel-soft: #eef2f5;
+    --text: #18212b;
+    --muted: #64707d;
+    --line: #d6dde4;
+    --accent: #1565c0;
+    --accent-soft: #dcecff;
+    --done: #73808c;
+    font: 16px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #11161b;
+        --panel: #1a2128;
+        --panel-soft: #222b34;
+        --text: #edf2f6;
+        --muted: #aab6c1;
+        --line: #35424f;
+        --accent: #72b4ff;
+        --accent-soft: #153657;
+        --done: #8d9aa6;
+    }
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+.shell { width: min(1050px, calc(100% - 32px)); margin: 0 auto; padding: 44px 0 64px; }
+.intro { max-width: 760px; margin-bottom: 28px; }
+.eyebrow { margin: 0 0 6px; color: var(--accent); font-size: .78rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+h1, h2, h3 { line-height: 1.15; }
+h1 { max-width: 700px; margin: 0 0 14px; font-size: clamp(2rem, 5vw, 3.4rem); letter-spacing: -.04em; }
+h2 { margin: 0; font-size: 1.35rem; }
+h3 { margin: 0 0 8px; color: var(--muted); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+.intro p:not(.eyebrow) { color: var(--muted); }
+.note { padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); color: var(--text) !important; }
+code, pre, input { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.card { margin-top: 22px; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); box-shadow: 0 12px 35px rgb(20 35 50 / 7%); }
+.section-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.status { padding: 5px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: .8rem; }
+.toolbar, .add-form, .call-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.add-form { grid-template-columns: 2fr 1fr auto; margin-top: 14px; }
+.call-form { grid-template-columns: 1.4fr 1fr 1fr auto; }
+label { display: grid; gap: 5px; color: var(--muted); font-size: .82rem; font-weight: 650; }
+input, select { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); }
+button { min-height: 40px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-soft); color: var(--text); }
+button:hover { border-color: var(--accent); color: var(--accent); }
+.add-form button, #run-call { border-color: var(--accent); background: var(--accent); color: white; }
+.item-list { display: grid; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+.item { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.item.done .item-title { color: var(--done); text-decoration: line-through; }
+.item-title { flex: 1; font-weight: 650; }
+.item-tag { color: var(--muted); font-size: .78rem; }
+.item-toggle { min-height: 30px; padding: 3px 8px; }
+.empty { padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); text-align: center; }
+.examples { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 15px; color: var(--muted); font-size: .82rem; }
+.examples button { min-height: 30px; padding: 3px 8px; font-size: .78rem; }
+.output-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }
+.output { min-height: 145px; max-height: 370px; overflow: auto; margin: 0; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+    .shell { width: min(100% - 20px, 600px); padding-top: 26px; }
+    .card { padding: 16px; }
+    .toolbar, .add-form, .call-form, .output-grid { grid-template-columns: 1fr; }
+}

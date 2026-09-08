@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ai-vision demo</title>
+    <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="intro">
+            <p class="eyebrow">ai-vision / browser proof</p>
+            <h1>A tiny task model an agent can read and drive</h1>
+            <p>
+                The page exposes the model, serializes its shape, mounts a loopback remote proxy,
+                and resolves calls against that proxy exactly as a host would.
+            </p>
+            <p class="note">
+                Run <code>npm run build</code> first. This page has no bundler and makes no fetch
+                requests, so it also works when opened directly with <code>file://</code>.
+            </p>
+        </header>
+
+        <section class="card" aria-labelledby="tasks-title">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Live application</p>
+                    <h2 id="tasks-title">Tasks</h2>
+                </div>
+                <button type="button" data-name="clear-done" id="clear-done">Clear done</button>
+            </div>
+
+            <div class="toolbar">
+                <label>
+                    Filter text
+                    <input data-name="filter-text" id="filter-text" type="search" placeholder="Search titles or tags">
+                </label>
+                <label>
+                    Status
+                    <select data-name="filter-status" id="filter-status">
+                        <option value="all">All</option>
+                        <option value="open">Open</option>
+                        <option value="done">Done</option>
+                    </select>
+                </label>
+            </div>
+
+            <form data-name="add-item" id="add-form" class="add-form">
+                <label>
+                    New task
+                    <input id="add-title" type="text" placeholder="Write a small task" required>
+                </label>
+                <label>
+                    Tag
+                    <input id="add-tag" type="text" placeholder="optional">
+                </label>
+                <button type="submit">Add item</button>
+            </form>
+            <ul data-name="item-list" id="item-list" class="item-list"></ul>
+        </section>
+
+        <section class="card" aria-labelledby="console-title">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Loopback call console</p>
+                    <h2 id="console-title">Resolve a path</h2>
+                </div>
+                <span id="connection-status" class="status">remote shape mounted</span>
+            </div>
+            <div class="call-form">
+                <label>
+                    Path
+                    <input id="call-path" type="text" spellcheck="false" value="">
+                </label>
+                <label>
+                    args (JSON array, optional)
+                    <input id="call-args" type="text" spellcheck="false" placeholder='["add"]'>
+                </label>
+                <label>
+                    value (JSON, optional)
+                    <input id="call-value" type="text" spellcheck="false" placeholder='"open"'>
+                </label>
+                <button type="button" id="run-call">Run</button>
+            </div>
+            <div class="examples" aria-label="Example paths">
+                <span>Examples</span>
+                <button type="button" data-example="" data-args="">root</button>
+                <button type="button" data-example="$help" data-args="">$help</button>
+                <button type="button" data-example="helpSearch" data-args='["add"]'>helpSearch</button>
+                <button type="button" data-example="items" data-args="">items</button>
+                <button type="button" data-example="items[0]" data-args="">items[0]</button>
+                <button type="button" data-example="filterText" data-args="">filterText</button>
+                <button type="button" data-example="addItem" data-args='["Read the README","demo"]'>addItem</button>
+                <button type="button" data-example="elements" data-args="">elements</button>
+                <button type="button" data-example="highlight" data-args='["add-item","Agent focus"]'>highlight</button>
+            </div>
+            <div class="output-grid">
+                <div>
+                    <h3>result</h3>
+                    <pre id="call-result" class="output" aria-live="polite">Run a path to see its result.</pre>
+                </div>
+                <div>
+                    <h3>hint.text</h3>
+                    <pre id="call-hint" class="output" aria-live="polite">Every described node can explain what is under it.</pre>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
