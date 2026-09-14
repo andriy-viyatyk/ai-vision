@@ -1,4 +1,4 @@
-import { buildErrorHint, buildHelp, buildHint, IHint } from "./hint.js";
+import { buildDescription, buildErrorHint, buildHelp, buildHint, IHint } from "./hint.js";
 import { findMemberSuggestions, formatSuggestions } from "./member-suggestion.js";
 import { formatPath, parsePath, PathSegment, PathSyntaxError } from "./path-parser.js";
 import { DEFAULT_MAX_LENGTH, shapeResult } from "./result-shaper.js";
@@ -15,7 +15,7 @@ import type { IAiEventsBlock } from "./events.js";
  *
  * Rules the walk enforces:
  * - Every hop is awaited, so async facades need no special syntax.
- * - A node's `restricted()` text stops the walk; only `$help` is still answered.
+ * - A node's `restricted()` text stops the walk; only `$help` and `$describe` are still answered.
  * - When a node has a descriptor, a member name must appear in `members` (or be a live child
  *   segment) — otherwise the error carries the member list, which is the self-correcting mechanism.
  *   Nodes without a descriptor (plain data) allow plain property access.
@@ -95,6 +95,16 @@ export async function resolveCall(root: unknown, request: ICallRequest, seenKind
                 return { path, error: `"${formatPath(walked) || "(root)"}" has no AiVision descriptor; nothing to explain. Its value is shown instead.`, ...shapeResult(current, maxLength) };
             }
             return { path, result: await buildHelp(formatPath(walked), descriptor) };
+        }
+
+        // Answered here, ahead of the restricted gate below, for the same reason `$help` is: a
+        // restricted node still describes itself, it just resolves nothing underneath. The payload
+        // carries `restricted` so a consumer can render the node without probing it.
+        if (segment.type === "describe") {
+            if (!descriptor) {
+                return { path, error: `"${formatPath(walked) || "(root)"}" has no AiVision descriptor; nothing to describe. Its value is shown instead.`, ...shapeResult(current, maxLength) };
+            }
+            return { path, result: await buildDescription(formatPath(walked), descriptor) };
         }
 
         const restricted = descriptor?.restricted?.();

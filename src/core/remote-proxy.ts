@@ -27,6 +27,9 @@ export interface IRemoteProxyOptions {
 type RemoteSender = (request: IAiRemoteRequest) => Promise<IAiRemoteResponse>;
 type RemoteNode = IAiVisible & { readonly __aiVisionPath?: string };
 
+/** Terminal path segments a remote model must not shadow with a member of its own. */
+const TERMINAL_MEMBER_NAMES = new Set(["$help", "$describe"]);
+
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 export const STALE_REMOTE_SHAPE_MESSAGE = "The remote model's shape changed since this reference was built; read its path again to pick up the new one.";
@@ -237,7 +240,7 @@ function sanitizeMembers(
     const seen = new Set<string>();
     const valid: IAiMemberShape[] = [];
     for (const member of members ?? []) {
-        if (!member || typeof member.name !== "string" || !IDENTIFIER.test(member.name) || member.name === "$help") {
+        if (!member || typeof member.name !== "string" || !IDENTIFIER.test(member.name) || TERMINAL_MEMBER_NAMES.has(member.name)) {
             onWarning(`Ignoring invalid remote member name ${JSON.stringify(member?.name)}.`);
             continue;
         }

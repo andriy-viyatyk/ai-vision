@@ -97,6 +97,57 @@ export async function buildErrorHint(
     };
 }
 
+/**
+ * A child in a `$describe` payload: the raw `IAiChild` plus the absolute path it resolves at, so a
+ * consumer building a tree does not have to re-implement `joinChildPath`.
+ */
+export interface IAiDescriptionChild extends IAiChild {
+    readonly path: string;
+}
+
+/**
+ * The `$describe` payload — the same descriptor `$help` renders as prose, projected to data.
+ *
+ * For programmatic consumers (a tree view, a generated client, a test harness). Agents should keep
+ * using `$help`: prose is the better artifact for them, and its wording is free to change, whereas
+ * this shape is a contract.
+ */
+export interface IAiDescription {
+    /** Where this node was resolved; "" at the root. */
+    readonly path: string;
+    readonly kind: string;
+    readonly summary: string;
+    readonly members: readonly IAiMember[];
+    readonly children: readonly IAiDescriptionChild[];
+    /** The descriptor's compact first-step map, when it declares one. */
+    readonly overview?: string;
+    /** Long-form help, already resolved when the descriptor supplies it as a function. */
+    readonly help?: string;
+    /** Canonical root-relative path, when the node is addressable. */
+    readonly identity?: string;
+    /** The node is described but nothing under it resolves — same rule as `$help`. */
+    readonly restricted?: string;
+}
+
+/** The structured `$describe` rendering: the `$help` descriptor as data rather than prose. */
+export async function buildDescription(path: string, descriptor: IAiVisionDescriptor): Promise<IAiDescription> {
+    const help = typeof descriptor.help === "function" ? descriptor.help() : descriptor.help;
+    const children = await descriptor.children?.() ?? [];
+    const identity = descriptor.identity?.();
+    const restricted = descriptor.restricted?.();
+    return {
+        path,
+        kind: descriptor.kind,
+        summary: descriptor.summary,
+        members: descriptor.members,
+        children: children.map(child => ({ ...child, path: joinChildPath(path, child.segment) })),
+        ...(descriptor.overview ? { overview: descriptor.overview } : {}),
+        ...(help ? { help: help.trim() } : {}),
+        ...(identity ? { identity } : {}),
+        ...(restricted ? { restricted } : {}),
+    };
+}
+
 /** The full `$help` rendering: long-form help, then members, then live children. */
 export async function buildHelp(path: string, descriptor: IAiVisionDescriptor): Promise<string> {
     const parts: string[] = [`${descriptor.kind} — ${descriptor.summary}`];

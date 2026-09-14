@@ -2,7 +2,7 @@
  * The `call` path grammar:
  *
  *   path     := "" | segment ( "." segment )*
- *   segment  := identifier suffix* | "$help"
+ *   segment  := identifier suffix* | "$help" | "$describe"
  *   suffix   := "[" json-index "]" | "(" json-args ")"
  *
  * `pages[2].editor.rows` → member(pages) index(2) call(editor, []) member(rows).
@@ -17,7 +17,8 @@ export type PathSegment =
     | { readonly type: "member"; readonly name: string }
     | { readonly type: "index"; readonly key: string | number }
     | { readonly type: "call"; readonly name: string; readonly args: unknown[] }
-    | { readonly type: "help" };
+    | { readonly type: "help" }
+    | { readonly type: "describe" };
 
 export class PathSyntaxError extends Error {
     constructor(message: string, readonly offset: number, suggestion?: string) {
@@ -25,6 +26,8 @@ export class PathSyntaxError extends Error {
         this.name = "PathSyntaxError";
     }
 }
+
+const TERMINAL_SEGMENTS = [["$help", "help"], ["$describe", "describe"]] as const;
 
 const IDENTIFIER_START = /[A-Za-z_$]/;
 const IDENTIFIER_PART = /[A-Za-z0-9_$]/;
@@ -71,6 +74,9 @@ export function formatPath(segments: readonly PathSegment[]): string {
             case "help":
                 text += text ? ".$help" : "$help";
                 break;
+            case "describe":
+                text += text ? ".$describe" : "$describe";
+                break;
         }
     }
     return text;
@@ -103,12 +109,15 @@ class PathParser {
 
     private parseSegment(segments: PathSegment[]): void {
         const start = this.position;
-        if (this.source.startsWith("$help", start)) {
-            this.position += 5;
+        // `$help` renders the node's descriptor as prose, `$describe` returns the same descriptor
+        // as data. Both are terminal: they describe where the walk stopped, so nothing follows.
+        for (const [keyword, type] of TERMINAL_SEGMENTS) {
+            if (!this.source.startsWith(keyword, start)) continue;
+            this.position += keyword.length;
             if (this.position < this.source.length) {
-                throw new PathSyntaxError("\"$help\" must be the last segment", this.position);
+                throw new PathSyntaxError(`"${keyword}" must be the last segment`, this.position);
             }
-            segments.push({ type: "help" });
+            segments.push({ type } as PathSegment);
             return;
         }
         const name = this.readIdentifier(segments);

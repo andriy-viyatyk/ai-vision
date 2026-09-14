@@ -214,6 +214,26 @@ member of your root node so an agent can ask "where do I add a row" instead of g
 
 backed by `(query, limit) => helpSearch(root, query, limit)`.
 
+### Reading a descriptor as data
+
+`$help` renders a node for an agent. `$describe` is its structured sibling: the same descriptor,
+the same walk, returned as data for a program — a tree view, a generated client, a test harness.
+
+```js
+await resolveCall(root, { path: "pages[0].editor.$describe" });
+// → { path, kind, summary, members[], children[], overview?, help?, identity?, restricted? }
+```
+
+Each child carries the absolute `path` it resolves at alongside its raw `segment`, so a consumer
+building a tree does not re-implement `joinChildPath`. Like `$help`, `$describe` must be the last
+segment, is answered by remote hosts as well as local roots, and answers *ahead* of the
+`restricted()` gate — a restricted node describes itself, carries its `restricted` text, and
+still resolves nothing beneath it.
+
+Agents should keep using `$help`: prose is the better artifact for them, and its wording is free
+to change, whereas the `$describe` shape is a contract. Hosts are advised not to advertise
+`$describe` in an agent-facing tool description.
+
 ### Remote contract
 
 `IAiVisionShape` is `{ schemaVersion, root }`. An `IAiNodeShape` contains `kind`, `summary`, optional `overview` and resolved `help`, `members`, optional element declarations, `indexable`, `hasChildren`, and an optional `item` shape. An `IAiMemberShape` contains the `IAiMember` fields plus optional `indexable`, `timeoutMs`, nested `node`, and indexed `item`. Values, functions, and live children are fetched per request; the shape contains structure only.

@@ -1,6 +1,7 @@
 import {
     AI_VISION_HOST_SIGNAL,
     AI_VISION_SCHEMA_VERSION,
+    buildDescription,
     buildHelp,
     errMessage,
     formatPath,
@@ -315,6 +316,12 @@ async function resolvePath(root: unknown, path: string | ParsedPath): Promise<un
         if (segment.type === "help") {
             if (!descriptor) throw new Error('"' + formatPath(walked) + '" has no AiVision descriptor.');
             return buildHelp(formatPath(walked), descriptor);
+        }
+        // Same placement as `$help`: ahead of the restricted throw, so a restricted node still
+        // describes itself. Keeps a remote model (a board's or a page's) browsable by a viewer.
+        if (segment.type === "describe") {
+            if (!descriptor) throw new Error('"' + formatPath(walked) + '" has no AiVision descriptor.');
+            return buildDescription(formatPath(walked), descriptor);
         }
         const restricted = descriptor?.restricted?.();
         if (restricted) throw new Error(restricted);

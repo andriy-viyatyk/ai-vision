@@ -14,4 +14,4 @@ export type { IRemoteProxyOptions } from "./remote-proxy.js";
 export { resolveTimeoutMs } from "./timeout.js";
 
 export const AI_VISION_SCHEMA_VERSION = 1;
-export const AI_VISION_VERSION = "1.1.0" as const;
+export const AI_VISION_VERSION = "1.2.0" as const;
