@@ -30,6 +30,12 @@ export interface IShapedResult {
 }
 
 export function shapeResult(value: unknown, maxLength: number = DEFAULT_MAX_LENGTH): IShapedResult {
+    if (isImageRecord(value)) {
+        // The client sends an image record as an image block, not as text, so the text bound does
+        // not apply to its data — cutting it only produces a broken image. Other fields are shaped.
+        const { data, ...metadata } = value;
+        return { result: { ...(shapeValue(metadata, 0, new WeakSet(), maxLength) as object), data } };
+    }
     if (typeof value === "string" && value.length > maxLength) {
         return { result: value.slice(0, maxLength), truncated: true, totalLength: value.length };
     }
@@ -45,6 +51,14 @@ export function shapeResult(value: unknown, maxLength: number = DEFAULT_MAX_LENG
         return truncateArray(shaped, maxLength, arrayInfo.total, arrayInfo.hasMarker);
     }
     return truncateObject(shaped, maxLength);
+}
+
+/** A top-level `{ type: "image", data, mimeType }` record, e.g. a screenshot. Only the top level is
+ *  exempt: an image nested in an array or object stays bounded, so a list cannot bypass the limit. */
+function isImageRecord(value: unknown): value is { type: "image"; data: string; mimeType: string } & Record<string, unknown> {
+    if (typeof value !== "object" || value === null || !isPlainObject(value)) return false;
+    const record = value as Record<string, unknown>;
+    return record.type === "image" && typeof record.data === "string" && typeof record.mimeType === "string";
 }
 
 function isStructuredCollection(value: unknown): value is unknown[] | Record<string, unknown> {

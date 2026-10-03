@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- `shapeResult` no longer truncates a top-level image record (`{ type: "image", data, mimeType }`):
+  its `data` is returned whole regardless of `maxLength`, so a screenshot reaches the client as a
+  valid image. Other fields are still shaped; images nested in arrays or objects stay bounded.
+
 ## 1.2.0
 
 - Added the `$describe` terminal path segment: the structured sibling of `$help`, returning a

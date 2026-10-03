@@ -291,7 +291,7 @@ another global name. Signal delivery failures go to `onWarning`.
 
 The library reports declared `timeoutMs` values and starts no timers. The host enforces the timeout using `resolveTimeoutMs(perCall, declared, runtime, fallback)`: per-call option, remote declaration, runtime knob, then built-in fallback. The roadmap's built-in policy is 30 seconds; an applied timeout should name its level and path while leaving the remote running.
 
-Results go through `shapeResult(value, maxLength)`. `maxLength` defaults to 20,000; long strings carry `truncated` and `totalLength`, while arrays and objects carry `truncated`, `shown`, and `total`. Described instances use `summarize()`, arrays are bounded and cycle-safe, and raw class internals are not dumped. `restricted()` gates a whole subtree: the node may still be listed and explained with `$help`, but nothing beneath it resolves.
+Results go through `shapeResult(value, maxLength)`. `maxLength` defaults to 20,000; long strings carry `truncated` and `totalLength`, while arrays and objects carry `truncated`, `shown`, and `total`. A top-level image record — `{ type: "image", data: string, mimeType: string }`, such as a screenshot — keeps its `data` whole regardless of `maxLength`, because clients send it as an image rather than as text; its other fields are shaped as usual, and an image nested inside an array or object stays bounded. Described instances use `summarize()`, arrays are bounded and cycle-safe, and raw class internals are not dumped. `restricted()` gates a whole subtree: the node may still be listed and explained with `$help`, but nothing beneath it resolves.
 
 ## Examples
 
