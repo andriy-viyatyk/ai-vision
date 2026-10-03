@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+- `helpSearch` tokenizes punctuation and camelCase while retaining complete identifiers, supports
+  exact and prefix word matching, and ignores common English stop words when substantive terms
+  remain.
+- Search results rank by token coverage, exact-word matches, and hit origin; concrete instance
+  paths break ties within those tiers.
+
 ## 1.2.1
 
 - `shapeResult` no longer truncates a top-level image record (`{ type: "image", data, mimeType }`):

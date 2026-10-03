@@ -203,9 +203,18 @@ The resolver awaits every hop, including async properties and calls. Discovery m
 
 ### Searching the tree
 
-`helpSearch(root, query, limit?)` walks the tree from a root and returns the members, `$help`
-paragraphs, and element purposes that match a query, each with the path to call. Expose it as a
-member of your root node so an agent can ask "where do I add a row" instead of guessing:
+`helpSearch(root, query, limit?)` walks the tree from a root and returns matching members, `$help`
+paragraphs, element purposes, and live child entries, each with its path and origin. Queries and
+indexed text are tokenized across punctuation and camelCase; complete identifiers are retained as
+tokens as well. A query word matches an indexed word exactly or as a prefix, so `row` matches
+`rows` and `addRows`, while `table` does not match `writable`. Common English stop words are
+ignored when the query has other words; an all-stop-word query still searches those words.
+
+Results rank by the number of query tokens matched, then by exact-word matches over prefixes.
+Member, kind-summary, and element hits rank above live child entries, which rank above help text.
+Concrete paths containing `[` break ties only within those relevance and origin tiers. Traversal
+order resolves remaining ties. Expose it as a member of your root node so an agent can ask "where do
+I add a row" instead of guessing:
 
 ```js
 { name: "helpSearch", kind: "method", signature: "helpSearch(query, limit?)",
