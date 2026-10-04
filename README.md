@@ -2,6 +2,8 @@
 
 This is an agent-facing object model over an application: a way to let an AI agent read and drive your app through named paths. It is explicitly not computer vision or image analysis; neighbouring npm packages with similar names are image SDKs. Your app exposes one `call` tool, and the agent discovers everything else from the object model itself.
 
+**Website:** [andriy-viyatyk.github.io/ai-vision](https://andriy-viyatyk.github.io/ai-vision/) — a demo video of an agent driving Persephone, and an overview.
+
 ## Why one `call` instead of many tools
 
 **Discovery is incremental.** The agent does not need to be handed the whole surface before it can start. It calls `call` with no path, reads the overview, and then descends only into the branch the task is about. Each result carries a hint listing what is under the node it landed on, so the next step is always in front of it.
