@@ -18,8 +18,27 @@ inside Persephone use the `remote` and `dom` entry points to publish their own m
 | `src/remote/` | `ai-vision/remote`: `expose()` — publish a model from another context (board iframe, web page) |
 | `scripts/` | Build helpers: highlight-source generation, asset copy, clean |
 | `examples/demo-page/` | A standalone demo page |
+| `doc/` | Task tracking: [doc/active-work.md](doc/active-work.md) and `doc/tasks/` (see below). Not published to npm |
 | `.github/workflows/release.yml` | Publishes to npm on a version tag (see below) |
 | `dist/` | Build output — gitignored, never committed |
+
+## Task tracking
+
+Planned and in-progress work lives in [doc/active-work.md](doc/active-work.md).
+
+- **IDs**: `AV-NNN`, numbered in order (the next ID is one above the highest in `doc/`).
+- **A task** is a folder `doc/tasks/AV-NNN-short-name/` with a `README.md`. Its sections:
+  **Goal**, **Background** (the code and patterns involved, with file links), **Implementation
+  plan** (steps with exact files, detailed enough to implement without re-reading the code),
+  **Concerns / Open questions**, **Acceptance criteria**, **Files changed**.
+- **Dashboard**: every task document has a linked entry under **Active** (being worked on) or
+  **Planned** (queued). Small ideas without a document go under **Ideas**, one line each.
+- **Work on a task** starts only when the user says so. Resolve its open questions first.
+- **When done**: release it if the user asks (see Releasing), then move the entry to
+  [doc/tasks/completed.md](doc/tasks/completed.md) with the version and date, and remove it from
+  the dashboard. Ask before deleting the task folder.
+- **Work that also needs Persephone** (a consumer change after a release): note it in the task's
+  plan; the Persephone side gets its own task in that repo's task workflow.
 
 ## Commands
 
