@@ -5,7 +5,7 @@ Tasks for the ai-vision library. Each task is a folder `tasks/AV-NNN-short-name/
 
 ## Active
 
-- [ ] [AV-002: Keep a thrown error's code in the call envelope](tasks/AV-002-error-codes/README.md)
+*(none)*
 
 ## Planned
 
