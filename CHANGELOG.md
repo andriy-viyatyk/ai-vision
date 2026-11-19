@@ -9,6 +9,7 @@
   `createRemoteProxy` rethrows it with that `code`, so a code thrown inside an `expose()`d model
   reaches the host's envelope.
 - Added `errCode(error)`, exported next to `errMessage(error)`.
+- `AI_VISION_VERSION` reports the package version again (it had stayed at `1.2.0`).
 
 ## 1.3.0
 
