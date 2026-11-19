@@ -4,7 +4,7 @@ import { formatPath, parsePath, PathSegment, PathSyntaxError } from "./path-pars
 import { DEFAULT_MAX_LENGTH, shapeResult } from "./result-shaper.js";
 import { getAiVision, IAiVisionDescriptor } from "./types.js";
 import { noArgumentsWarning } from "./argument-validation.js";
-import { errMessage } from "./errors.js";
+import { errCode, errMessage } from "./errors.js";
 import type { IAiEventsBlock } from "./events.js";
 
 /**
@@ -50,6 +50,11 @@ export interface ICallResult {
     hint?: IHint;
     warning?: string;
     error?: string;
+    /**
+     * On error: the thrown error's own string `code` (e.g. `"rejected"`, `"ENOENT"`), when it had
+     * one. Absent for uncoded errors and for the resolver's own path errors.
+     */
+    code?: string;
     /** On error: the longest prefix of the path that did resolve. */
     resolvedUpTo?: string;
 }
@@ -60,6 +65,8 @@ export type SeenKinds = Set<string>;
 interface ErrorAtOptions {
     forceMembers?: boolean;
     unknownMember?: string;
+    /** The thrown error's code, carried into the envelope. */
+    code?: string;
 }
 
 export async function resolveCall(root: unknown, request: ICallRequest, seenKinds: SeenKinds = new Set()): Promise<ICallResult> {
@@ -151,7 +158,7 @@ export async function resolveCall(root: unknown, request: ICallRequest, seenKind
                     } catch (error) {
                         const valueType = Array.isArray(request.value) ? "array" : typeof request.value;
                         return await errorAt(path, walked, current, seenKinds, hintMode,
-                            `Assigning ${valueType} to "${name}" failed: ${errMessage(error)}. If the property holds text, pass "value" as a string (JSON.stringify structured data first).`, {}, walkedContainsCall);
+                            `Assigning ${valueType} to "${name}" failed: ${errMessage(error)}. If the property holds text, pass "value" as a string (JSON.stringify structured data first).`, { code: errCode(error) }, walkedContainsCall);
                     }
                     walked.push(segment);
                     return { path, result: { ok: true } };
@@ -189,7 +196,7 @@ export async function resolveCall(root: unknown, request: ICallRequest, seenKind
                 current = await value;
             }
         } catch (error) {
-            return await errorAt(path, walked, current, seenKinds, hintMode, errMessage(error), {}, walkedContainsCall);
+            return await errorAt(path, walked, current, seenKinds, hintMode, errMessage(error), { code: errCode(error) }, walkedContainsCall);
         }
         walkedContainsCall ||= invokedCall;
         walked.push(segment);
@@ -262,14 +269,15 @@ async function errorAt(
     const error = suggestions.length
         ? `${message} Did you mean ${formatSuggestions(suggestions)}?`
         : message;
+    const code = options.code ? { code: options.code } : {};
     if (suggestions.length && mode !== "always") {
-        return { path, error, resolvedUpTo };
+        return { path, error, ...code, resolvedUpTo };
     }
 
     const hint = options.forceMembers
         ? await errorNodeHint(resolvedUpTo, node, seenKinds, mode, walkedContainsCall)
         : await nodeHint(resolvedUpTo, node, seenKinds, mode, walkedContainsCall);
-    return { path, error, resolvedUpTo, ...(hint ? { hint } : {}) };
+    return { path, error, ...code, resolvedUpTo, ...(hint ? { hint } : {}) };
 }
 
 async function errorNodeHint(

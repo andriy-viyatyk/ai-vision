@@ -249,7 +249,7 @@ to change, whereas the `$describe` shape is a contract. Hosts are advised not to
 
 `IAiVisionShape` is `{ schemaVersion, root }`. An `IAiNodeShape` contains `kind`, `summary`, optional `overview` and resolved `help`, `members`, optional element declarations, `indexable`, `hasChildren`, and an optional `item` shape. An `IAiMemberShape` contains the `IAiMember` fields plus optional `indexable`, `timeoutMs`, nested `node`, and indexed `item`. Values, functions, and live children are fetched per request; the shape contains structure only.
 
-The wire request is `IAiRemoteRequest`: `{ action, path, args?, value?, maxLength?, timeoutMs?, view?, name?, message? }`, where `action` is one of `ai:get`, `ai:set`, `ai:invoke`, `ai:children`, `ai:elements`, or `ai:highlight`. A success `IAiRemoteResponse` is `{ ok: true, result?, truncated?, totalLength?, shown?, total? }`; an error is `{ ok: false, error }`.
+The wire request is `IAiRemoteRequest`: `{ action, path, args?, value?, maxLength?, timeoutMs?, view?, name?, message? }`, where `action` is one of `ai:get`, `ai:set`, `ai:invoke`, `ai:children`, `ai:elements`, or `ai:highlight`. A success `IAiRemoteResponse` is `{ ok: true, result?, truncated?, totalLength?, shown?, total? }`; an error is `{ ok: false, error, code? }`, where `code` is the thrown error's own string `code`; `createRemoteProxy` rethrows it as an `Error` with that `code`, so the host resolver keeps it (see [Errors](#errors)).
 
 | Resolver operation | Request | Remote operation |
 |---|---|---|
@@ -295,6 +295,19 @@ host can import `AI_VISION_HOST_SIGNAL` and `IAiHostSignal` from `ai-vision`, in
 at that name, and receive one JSON-encoded signal string. `ai-vision/remote` re-exports both for
 remote-side compatibility. Use `onHostSignal` for a direct callback or `hostSignalName` for
 another global name. Signal delivery failures go to `onWarning`.
+
+### Errors
+
+A failed call returns `{ path, error, code?, resolvedUpTo?, hint? }` instead of `result`. `error` is
+the message. When a member throws (a getter, a method, a rejected promise, an index hop, or a
+failed assignment) and the thrown value has its own non-empty string `code` — for example
+`Object.assign(new Error("Denied by the user"), { code: "rejected" })`, or Node's `ENOENT` —
+the envelope keeps it as `code`. An error without a string `code`, and the resolver's own
+path errors (unknown member, not writable, bad syntax), have no `code` key at all, exactly as
+before 1.4.0. The message is never rewritten; showing the code to the agent (for example as
+`Error [rejected]: …`) is the host's choice. `errCode(error)` is the helper the resolver uses,
+exported next to `errMessage(error)`. Codes survive a remote hop too (see
+[Remote contract](#remote-contract)).
 
 ### Versioning, timeouts, and results
 

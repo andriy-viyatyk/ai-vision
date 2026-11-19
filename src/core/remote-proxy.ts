@@ -220,7 +220,11 @@ export function createRemoteProxy(
         if (validation === false) throw new Error(STALE_REMOTE_SHAPE_MESSAGE);
         if (typeof validation === "string" && validation) throw new Error(validation);
         const response = await send(request);
-        if (!response.ok) throw new Error(response.error);
+        if (!response.ok) {
+            throw typeof response.code === "string" && response.code
+                ? Object.assign(new Error(response.error), { code: response.code })
+                : new Error(response.error);
+        }
         return response.result;
     }
 

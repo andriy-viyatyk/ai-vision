@@ -3,6 +3,7 @@ import {
     AI_VISION_SCHEMA_VERSION,
     buildDescription,
     buildHelp,
+    errCode,
     errMessage,
     formatPath,
     getAiVision,
@@ -166,7 +167,8 @@ export function expose(root: object, options: IExposeOptions = {}): IAiVisionRem
                 : resolved;
             return shapedSuccess(result, request.maxLength);
         } catch (error) {
-            return { ok: false, error: errMessage(error) };
+            const code = errCode(error);
+            return { ok: false, error: errMessage(error), ...(code ? { code } : {}) };
         }
     }
 }

@@ -58,4 +58,6 @@ export type IAiRemoteResponse =
     | {
         readonly ok: false;
         readonly error: string;
+        /** The thrown error's own string `code`, when it had one. */
+        readonly code?: string;
     };

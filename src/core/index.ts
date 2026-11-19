@@ -7,7 +7,7 @@ export * from "./member-suggestion.js";
 export * from "./result-shaper.js";
 export * from "./argument-validation.js";
 export * from "./events.js";
-export { errMessage } from "./errors.js";
+export { errCode, errMessage } from "./errors.js";
 export * from "./remote-types.js";
 export { createRemoteProxy, STALE_REMOTE_SHAPE_MESSAGE } from "./remote-proxy.js";
 export type { IRemoteProxyOptions } from "./remote-proxy.js";

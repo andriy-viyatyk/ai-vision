@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0
+
+- A failed call keeps the thrown error's own string `code` as `ICallResult.code` (thrown
+  members, rejected promises, index hops and failed assignments). Errors without a string code,
+  and the resolver's own path errors, are unchanged: no `code` key.
+- The remote error response `{ ok: false, error, code? }` carries the code too, and
+  `createRemoteProxy` rethrows it with that `code`, so a code thrown inside an `expose()`d model
+  reaches the host's envelope.
+- Added `errCode(error)`, exported next to `errMessage(error)`.
+
 ## 1.3.0
 
 - `helpSearch` tokenizes punctuation and camelCase while retaining complete identifiers, supports
