@@ -1,4 +1,4 @@
-import { IAiChild, IAiMember, IAiVisionDescriptor } from "./types.js";
+import { IAiChild, IAiMember, IAiVisionDescriptor, visibleMembers } from "./types.js";
 import { joinChildPath } from "./path-parser.js";
 
 /**
@@ -39,7 +39,8 @@ export function formatMember(member: IAiMember): string {
     return `  ${name} — ${member.summary}${suffix}`;
 }
 
-export function formatMembers(members: readonly IAiMember[]): string {
+export function formatMembers(allMembers: readonly IAiMember[]): string {
+    const members = visibleMembers(allMembers);
     if (members.length === 0) return "";
     return `members:\n${members.map(formatMember).join("\n")}`;
 }
@@ -139,7 +140,7 @@ export async function buildDescription(path: string, descriptor: IAiVisionDescri
         path,
         kind: descriptor.kind,
         summary: descriptor.summary,
-        members: descriptor.members,
+        members: visibleMembers(descriptor.members),
         children: children.map(child => ({ ...child, path: joinChildPath(path, child.segment) })),
         ...(descriptor.overview ? { overview: descriptor.overview } : {}),
         ...(help ? { help: help.trim() } : {}),

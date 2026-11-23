@@ -57,6 +57,7 @@ export function createRemoteProxy(
             ...(member.signature !== undefined ? { signature: member.signature } : {}),
             ...(member.caution !== undefined ? { caution: member.caution } : {}),
             ...(member.writable !== undefined ? { writable: member.writable } : {}),
+            ...(member.hidden === true ? { hidden: true } : {}),
             ...(member.node !== undefined ? { node: true } : {}),
         }));
 

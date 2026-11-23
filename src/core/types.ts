@@ -29,6 +29,17 @@ export interface IAiMember {
      * Never set it on a getter with side effects.
      */
     readonly node?: boolean;
+    /**
+     * Resolves like any other member but is left out of discovery: member lists, `$help`,
+     * `$describe`, `helpSearch` and "Did you mean" suggestions. For aliases of listed members and
+     * for host-internal members an agent should not be steered to.
+     */
+    readonly hidden?: boolean;
+}
+
+/** The members discovery shows: every member except `hidden` ones. */
+export function visibleMembers(members: readonly IAiMember[]): readonly IAiMember[] {
+    return members.some(member => member.hidden) ? members.filter(member => !member.hidden) : members;
 }
 
 export interface IAiElementDeclaration {
@@ -87,6 +98,12 @@ export interface IAiVisionDescriptor {
     index?(key: string | number): unknown;
     /** Values for advertised members the target object does not itself implement. */
     provide?(name: string): { value: unknown } | undefined;
+    /**
+     * Host-specific suggestion for an unknown member name, used instead of the fuzzy name match:
+     * the resolver answers `<error> Did you mean <returned text>?`. Return `undefined` to fall back
+     * to the fuzzy match. Local descriptors only; it does not cross `remote`.
+     */
+    suggest?(name: string): string | undefined;
     /**
      * Curated on-screen controls this node owns, for `helpSearch` to index by purpose — so
      * "where do I change the language" finds the control and not only the API that sets it.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0
+
+- `IAiMember.hidden`: the member resolves normally but is left out of discovery: hints, `$help`,
+  `$describe`, `helpSearch` and "Did you mean" suggestions. For aliases of listed members and
+  host-internal members. It crosses `remote` (`IAiMemberShape.hidden`).
+- `IAiVisionDescriptor.suggest(name)`: a host-specific suggestion for an unknown member, used
+  instead of the fuzzy name match (`<error> Did you mean <text>?`); `undefined` keeps the fuzzy
+  match. Local descriptors only.
+- Added `visibleMembers(members)`, the member list discovery shows.
+
 ## 1.4.0
 
 - A failed call keeps the thrown error's own string `code` as `ICallResult.code` (thrown

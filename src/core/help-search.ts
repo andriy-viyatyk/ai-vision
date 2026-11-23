@@ -1,6 +1,6 @@
 ﻿import { joinChildPath, parsePath } from "./path-parser.js";
 import { formatMember } from "./hint.js";
-import { getAiVision } from "./types.js";
+import { getAiVision, visibleMembers } from "./types.js";
 import type { IAiVisionDescriptor } from "./types.js";
 
 /**
@@ -72,7 +72,7 @@ export async function helpSearch(root: unknown, query: string, limit = 20): Prom
         }
 
         if (depth >= MAX_DEPTH || descriptor.restricted?.()) continue;
-        for (const member of descriptor.members) {
+        for (const member of visibleMembers(descriptor.members)) {
             // `node: true` is the author's statement that *reading* this property is safe; a
             // `caution` on it describes what its members do (fs writes), not the read itself.
             if (member.kind !== "property" || member.node !== true) continue;
@@ -113,7 +113,7 @@ function collectKindHits(
         path: path || "(root)", kind: descriptor.kind, matchedLine: nodeLine, origin: "kind-summary",
     }, candidates, nextOrder);
 
-    for (const member of descriptor.members) {
+    for (const member of visibleMembers(descriptor.members)) {
         const line = formatMember(member).trim();
         addCandidate(`${member.name} ${line}`, queryTokens, {
             path: joinChildPath(path, member.kind === "method" ? `${member.name}()` : member.name),

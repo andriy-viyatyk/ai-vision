@@ -186,6 +186,7 @@ Every exposed node carries `aiVision: IAiVisionDescriptor`:
 | `restricted` | Optional synchronous gate returning text; the whole subtree then stops resolving. |
 | `index` | Optional synchronous lookup for `items[3]` or `items["id"]`; `undefined` means no item. |
 | `provide` | Optional synchronous provider for advertised values not implemented on the target. |
+| `suggest` | Optional synchronous function for an unknown member name: return text to answer `<error> Did you mean <text>?` instead of the fuzzy name match, or `undefined` to keep the fuzzy match. Line breaks are collapsed. Local descriptors only; it does not cross `remote`. |
 | `elements` | Optional declarations for curated on-screen controls used by search and DOM wiring. |
 | `summarize` | Optional synchronous or async JSON-able instance summary for result shaping. |
 
@@ -200,6 +201,7 @@ Each `IAiMember` has:
 | `caution` | Optional warning printed with the member. |
 | `writable` | For properties, allows assignment through `value`. |
 | `node` | Says the property value is another safe AiVision node that search may follow. |
+| `hidden` | The member resolves normally but is left out of discovery: hints, `$help`, `$describe`, `helpSearch` and "Did you mean" suggestions. Use it for aliases of listed members and host-internal members. It crosses `remote`. |
 
 The resolver awaits every hop, including async properties and calls. Discovery metadata is synchronous: `members`, `index`, `provide`, and `restricted` are called synchronously (while `children` and `summarize` may be async). A descriptor member must be declared, unless a live `children()` segment authorizes that child; plain values without descriptors allow ordinary property access.
 

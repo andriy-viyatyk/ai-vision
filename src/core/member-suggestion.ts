@@ -1,3 +1,4 @@
+import { visibleMembers } from "./types.js";
 import type { IAiMember } from "./types.js";
 
 /** At most this many names are offered: a longer list stops being a one-line correction. */
@@ -16,7 +17,8 @@ const MAX_SUGGESTIONS = 3;
  * likelier typo than a deletion, which is what puts `pages` ahead of `page` for `pagez` — then
  * declaration order, so the result is deterministic.
  */
-export function findMemberSuggestions(name: string, members: readonly IAiMember[]): readonly string[] {
+export function findMemberSuggestions(name: string, allMembers: readonly IAiMember[]): readonly string[] {
+    const members = visibleMembers(allMembers);
     const normalizedName = name.toLowerCase();
     const exactMatches = members.filter(member => member.name.toLowerCase() === normalizedName);
     if (exactMatches.length) return exactMatches.slice(0, MAX_SUGGESTIONS).map(member => member.name);

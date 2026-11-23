@@ -18,7 +18,7 @@ export interface IAiNodeShape {
     readonly item?: IAiNodeShape;
 }
 
-export interface IAiMemberShape extends Pick<IAiMember, "name" | "kind" | "summary" | "signature" | "caution" | "writable"> {
+export interface IAiMemberShape extends Pick<IAiMember, "name" | "kind" | "summary" | "signature" | "caution" | "writable" | "hidden"> {
     readonly indexable?: boolean;
     readonly timeoutMs?: number;
     readonly node?: IAiNodeShape;

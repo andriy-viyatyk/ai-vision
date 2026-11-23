@@ -263,14 +263,19 @@ async function errorAt(
 ): Promise<ICallResult> {
     const resolvedUpTo = formatPath(walked);
     const descriptor = getAiVision(node);
-    const suggestions = descriptor && options.unknownMember
+    const exactSuggestion = descriptor && options.unknownMember
+        ? descriptor.suggest?.(options.unknownMember)?.replace(/\s*[\r\n]+\s*/g, " ").trim() || undefined
+        : undefined;
+    const suggestions = !exactSuggestion && descriptor && options.unknownMember
         ? findMemberSuggestions(options.unknownMember, descriptor.members)
         : [];
-    const error = suggestions.length
-        ? `${message} Did you mean ${formatSuggestions(suggestions)}?`
-        : message;
+    const error = exactSuggestion
+        ? `${message} Did you mean ${exactSuggestion}?`
+        : suggestions.length
+            ? `${message} Did you mean ${formatSuggestions(suggestions)}?`
+            : message;
     const code = options.code ? { code: options.code } : {};
-    if (suggestions.length && mode !== "always") {
+    if ((exactSuggestion || suggestions.length) && mode !== "always") {
         return { path, error, ...code, resolvedUpTo };
     }
 
