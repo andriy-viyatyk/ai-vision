@@ -139,7 +139,12 @@ function setObjectEntry(target: Record<string, unknown>, key: string, value: unk
     Object.defineProperty(target, key, { value, enumerable: true, configurable: true, writable: true });
 }
 
-function shapeValue(value: unknown, depth: number, seen: WeakSet<object>, maxLength: number): unknown {
+/**
+ * @param ancestors the objects on the path from the root to `value`. Only these make a cycle: an
+ * object reached twice through different branches (a shared constant array, say) is shaped both
+ * times.
+ */
+function shapeValue(value: unknown, depth: number, ancestors: WeakSet<object>, maxLength: number): unknown {
     if (value === null || value === undefined) return value ?? null;
     switch (typeof value) {
         case "string":
@@ -155,7 +160,7 @@ function shapeValue(value: unknown, depth: number, seen: WeakSet<object>, maxLen
             return { kind: "function", note: "Call it with () — see the members list for its signature." };
     }
     const object = value as object;
-    if (seen.has(object)) return { kind: "circular" };
+    if (ancestors.has(object)) return { kind: "circular" };
     const descriptor = getAiVision(object);
     if (descriptor) {
         if (!descriptor.summarize) return { kind: descriptor.kind };
@@ -173,21 +178,29 @@ function shapeValue(value: unknown, depth: number, seen: WeakSet<object>, maxLen
         return summary;
     }
     if (depth >= MAX_DEPTH) return { kind: Array.isArray(object) ? "array" : "object", note: "depth limit" };
-    seen.add(object);
+    ancestors.add(object);
+    try {
+        return shapeContainer(object, depth, ancestors, maxLength);
+    } finally {
+        ancestors.delete(object);
+    }
+}
+
+function shapeContainer(object: object, depth: number, ancestors: WeakSet<object>, maxLength: number): unknown {
     if (Array.isArray(object)) {
-        const items = object.slice(0, MAX_ARRAY_ITEMS).map(item => shapeValue(item, depth + 1, seen, maxLength));
+        const items = object.slice(0, MAX_ARRAY_ITEMS).map(item => shapeValue(item, depth + 1, ancestors, maxLength));
         if (object.length > MAX_ARRAY_ITEMS) items.push({ kind: "truncated", note: `${object.length - MAX_ARRAY_ITEMS} more items` });
         return items;
     }
     if (object instanceof Date) return object.toISOString();
     if (object instanceof Error) return { kind: "error", message: object.message };
-    if (object instanceof Map) return shapeValue(Object.fromEntries(object), depth, seen, maxLength);
-    if (object instanceof Set) return shapeValue([...object], depth, seen, maxLength);
+    if (object instanceof Map) return shapeValue(Object.fromEntries(object), depth, ancestors, maxLength);
+    if (object instanceof Set) return shapeValue([...object], depth, ancestors, maxLength);
     if (isPlainObject(object)) {
         const shaped: Record<string, unknown> = {};
         for (const [key, item] of Object.entries(object)) {
             if (typeof item === "function") continue;
-            setObjectEntry(shaped, key, shapeValue(item, depth + 1, seen, maxLength));
+            setObjectEntry(shaped, key, shapeValue(item, depth + 1, ancestors, maxLength));
         }
         return shaped;
     }

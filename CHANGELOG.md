@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.1
+
+- Result shaping marks an object `{ kind: "circular" }` only when it contains itself (it is one of
+  its own ancestors). An object reached twice through different branches, such as one constant
+  array shared by several list items, was marked circular from its second appearance on; it is
+  now shaped each time.
+
 ## 1.5.0
 
 - `IAiMember.hidden`: the member resolves normally but is left out of discovery: hints, `$help`,
